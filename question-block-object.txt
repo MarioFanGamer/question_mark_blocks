@@ -1,0 +1,88 @@
+; This is an object and not a block and such requires ObjecTool.
+; GPS will throw a warning if you insert it or, if it does insert it,
+; the "block" crashes.
+; Keep doing it, complaining, that this 'block' doesn't work,
+; especially on me, and feel yourself thumb if you missed that fact.
+; This object uses its Y 'size' to determine, whether the block is
+; normal or giant sized whereas the second setting byte controls
+; the ?-block subtype. Because of that, you have to enter four
+; instead of two digits for the extension.
+; In addition, this is intended to be inserted as NORMAL object 2D,
+; not as an EXTENDED object. As such, put it below "CustObj2DxYY:"
+; By the way, you can also set the width but it does nothing. This
+; may sound bad but you can use them to have a visual 32x32 block
+; since doing it otherwise requires you to deal with the way how
+; Lunar Magic handles priority between two objects.
+
+CustObj20:
+	LDY $57
+	LDA $58
+	STA $00
+	LDA $59
+	LSR #4
+	BNE .giant_size
+
+.normal_block
+	JSR GetItemMemoryBit
+	TAX
+	LDA #$00
+	CPX #$00
+	BNE ..item_memory_set
+	LDA $00
+	INC
+	ASL
+..item_memory_set
+	TAX
+
+	LDA .tile_number,x
+	STA [$6B],y
+	LDA .tile_number+1,x
+	STA [$6E],y
+RTS
+
+; The first tile is when the item memory bit is set
+; The others are indexed by the object-number plus one
+.tile_number
+dw $0700,$0701,$0702,$0703,$0704,$0705,$0706,$0707
+
+.giant_size
+	LDY $57
+	JSR GetItemMemoryBit
+	TAX
+	LDA #$00
+	CPX #$00
+	BNE ..item_memory_set
+	LDA $00
+	INC
+	ASL #3
+..item_memory_set
+	TAX
+	JSR .put_object
+	JSR ShiftObjRight
+	JSR .put_object
+	JSR ShiftObjDown
+	JSR .put_object
+	JSR ShiftObjRight
+	JSR .put_object
+RTS
+
+.put_object
+	LDA .tiles,x
+	STA [$6B],y
+	LDA .tiles+1,x
+	STA [$6E],y
+	INX #2
+RTS
+
+; The first four tiles are when the item memory bit is set
+; The others are indexed by the object-number plus one times four
+; The tile order is pretty straight forward:
+; Top left, top right, bottom left, bottom right
+.tiles
+dw $0720,$0721,$0730,$0731
+dw $0722,$0723,$0732,$0733
+dw $0724,$0725,$0734,$0735
+dw $0726,$0727,$0736,$0737
+dw $0728,$0729,$0738,$0739
+dw $072A,$072B,$073A,$073B
+dw $072C,$072D,$073C,$073D
